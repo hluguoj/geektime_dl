@@ -6,15 +6,16 @@ import traceback
 import configparser
 import argparse
 import functools
+from typing import List
 
-from geektime_dl.log import logger
-from geektime_dl.dal import get_data_client, DataClient
-from geektime_dl.utils import get_working_folder
+from geektime_dl.utils.log import logger
+from geektime_dl.data_client import get_data_client, DataClient
+
 
 commands = {}
 
 cwd = os.path.abspath('.')
-geektime_cfg = str(get_working_folder() / 'geektime.cfg')
+geektime_cfg = os.path.join(cwd, 'geektime.cfg')
 
 
 class CommandType(type):
@@ -73,8 +74,7 @@ class Command(metaclass=CommandType):
 
     @staticmethod
     def is_course_finished(course_info: dict):
-        return course_info['update_frequency'] in ['全集', '已完结'] or \
-            course_info['is_finish']
+        return course_info['is_finish']
 
     @staticmethod
     def get_data_client(cfg: dict) -> DataClient:
@@ -86,6 +86,31 @@ class Command(metaclass=CommandType):
                 "invalid geektime account or password\n"
                 "Use '{} login --help' for  help.\n".format(
                     sys.argv[0].split(os.path.sep)[-1]))
+
+    def get_all_course_ids(self, dc: DataClient, type_: str) -> List[int]:
+        raise NotImplementedError
+
+    def parse_course_ids(self, ids_str: str, dc: DataClient) -> List[int]:
+
+        if ids_str.startswith('all'):
+            return self.get_all_course_ids(dc, type_=ids_str)
+
+        def _int(num):
+            try:
+                return int(num)
+            except Exception:
+                raise ValueError('illegal course ids: {}'.format(ids_str))
+        res = list()
+        segments = ids_str.split(',')
+        for seg in segments:
+            if '-' in seg:
+                s, e = seg.split('-', 1)
+                res.extend(range(_int(s), _int(e) + 1))
+            else:
+                res.append(_int(seg))
+        res = list(set(res))
+        res.sort()
+        return res
 
     @property
     def parser(self) -> argparse.ArgumentParser:
