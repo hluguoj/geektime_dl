@@ -7,7 +7,7 @@ from termcolor import colored
 
 from geektime_dl.utils.ebook import Render
 from geektime_dl.cli import Command, add_argument
-from geektime_dl.utils.m3u8_downloader import Downloader
+from geektime_dl.utils.m3u8_to_mp4_downloader import Downloader
 from geektime_dl.data_client.gk_apis import GkApiError
 
 
@@ -77,8 +77,8 @@ class Mp4(Command):
             # download mp4
             for post in data:
                 fn = (Render.format_file_name(post['title']) +
-                      ('.hd' if cfg['hd_only'] else '.sd'))
-                if os.path.isfile(os.path.join(out_dir, fn) + '.ts'):
+                      ('.hd' if cfg['hd_only'] else '.sd') + ".mp4")
+                if os.path.isfile(os.path.join(out_dir, fn)):
                     sys.stdout.write(fn + ' exists\n')
                     continue
                 url = self._parse_url(post, cfg['hd_only'])
